@@ -14,5 +14,9 @@ CHIP Bit {
     OUT out;
 
     PARTS:
-    // Put your code here:
+    // Use Mux to determine whether we use the new input or the previous
+    Mux (a=prevOut, b=in, sel=load, out=newIn);
+
+    // Trick is to assign out to 2 variables!
+    DFF (in=newIn, out=out, out=prevOut);
 }
