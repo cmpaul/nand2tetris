@@ -39,5 +39,37 @@ CHIP CPU {
         pc[15];          // address of next instruction
 
     PARTS:
-    // Put your code here:
+    Not (in=instruction[15], out=ni);
+    Mux16 (a=aluOut, b=instruction, sel=ni, out=addr);
+
+    Or (a=ni, b=instruction[5], out=loadA);
+    ARegister (in=addr, load=loadA, out=aReg, out[0..14]=addressM); // BUILT-IN
+
+    And (a=instruction[15], b=instruction[12], out=aOrMSel);
+    Mux16 (a=aReg, b=inM, sel=aOrMSel, out=aOrM);
+
+    ALU (x=dReg, y=aOrM, zx=instruction[11], nx=instruction[10], zy=instruction[9], ny=instruction[8], f=instruction[7], no=instruction[6], out=aluOut, out=outM, zr=zr, ng=ng);
+
+    And (a=instruction[15], b=instruction[4], out=loadD);
+    DRegister (in=aluOut, load=loadD, out=dReg); // BUILT-IN
+
+    And (a=instruction[15], b=instruction[3], out=writeM);
+
+    // Determine the jumps (Update the PC)
+    Not (in=ng, out=pos);
+    Not (in=zr, out=notZero);
+    And (a=instruction[15], b=instruction[0], out=jgt);
+    And (a=pos, b=notZero, out=posNotZero);
+    And (a=jgt, b=posNotZero, out=load1);
+
+    And (a=instruction[15], b=instruction[1], out=jeq);
+    And (a=jeq, b=zr, out=load2);
+
+    And (a=instruction[15], b=instruction[2], out=jlt);
+    And (a=jlt, b=ng, out=load3);
+
+    Or (a=load1, b=load2, out=load1Or2);
+    Or (a=load3, b=load1Or2, out=loadPC);
+
+    PC (in=aReg, load=loadPC, inc=true, reset=reset, out[0..14]=pc);
 }
